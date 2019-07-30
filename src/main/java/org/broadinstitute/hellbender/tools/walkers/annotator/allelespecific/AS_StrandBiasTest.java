@@ -7,7 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.broadinstitute.hellbender.engine.ReferenceContext;
 import org.broadinstitute.hellbender.tools.walkers.annotator.StrandBiasTest;
-import org.broadinstitute.hellbender.utils.genotyper.ReadLikelihoods;
+import org.broadinstitute.hellbender.utils.genotyper.AlleleLikelihoods;
 import org.broadinstitute.hellbender.utils.pileup.PileupElement;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.variant.GATKVCFConstants;
@@ -47,7 +47,7 @@ public abstract class AS_StrandBiasTest extends StrandBiasTest implements Reduci
 
 
     /**
-     * Uses the ReadLikelihoods map to generate a 2x2 strand contingency table by counting the total read support for each
+     * Uses the likelihoods map to generate a 2x2 strand contingency table by counting the total read support for each
      * allele in either the forward or reverse direction.
      *
      * @param ref the reference context for this annotation
@@ -58,7 +58,7 @@ public abstract class AS_StrandBiasTest extends StrandBiasTest implements Reduci
     @Override
     public Map<String, Object> annotateRawData(final ReferenceContext ref,
                                                final VariantContext vc,
-                                               final ReadLikelihoods<Allele> likelihoods ) {
+                                               final AlleleLikelihoods<GATKRead, Allele> likelihoods ) {
 
         //for allele-specific annotations we only call from HC and we only use likelihoods
         if ( likelihoods == null || !likelihoods.hasFilledLikelihoods()) {
@@ -202,7 +202,7 @@ public abstract class AS_StrandBiasTest extends StrandBiasTest implements Reduci
      * @return a 2x2 contingency table
      */
     public void getStrandCountsFromLikelihoodMap( final VariantContext vc,
-                                                  final ReadLikelihoods<Allele> likelihoods,
+                                                  final AlleleLikelihoods<GATKRead, Allele> likelihoods,
                                                   final ReducibleAnnotationData<List<Integer>> perAlleleValues,
                                                   final int minCount) {
         if( likelihoods == null || vc == null ) {

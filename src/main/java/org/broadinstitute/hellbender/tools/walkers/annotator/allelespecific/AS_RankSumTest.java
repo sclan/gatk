@@ -13,8 +13,9 @@ import org.broadinstitute.hellbender.utils.CompressedDataList;
 import org.broadinstitute.hellbender.utils.Histogram;
 import org.broadinstitute.hellbender.utils.MannWhitneyU;
 import org.broadinstitute.hellbender.utils.Utils;
-import org.broadinstitute.hellbender.utils.genotyper.ReadLikelihoods;
+import org.broadinstitute.hellbender.utils.genotyper.AlleleLikelihoods;
 import org.broadinstitute.hellbender.utils.pileup.PileupElement;
+import org.broadinstitute.hellbender.utils.read.GATKRead;
 
 import java.util.*;
 
@@ -31,7 +32,7 @@ public abstract class AS_RankSumTest extends RankSumTest implements ReducibleAnn
     @Override
     public Map<String, Object> annotate(final ReferenceContext ref,
                                         final VariantContext vc,
-                                        final ReadLikelihoods<Allele> likelihoods) {
+                                        final AlleleLikelihoods<GATKRead, Allele> likelihoods) {
         Utils.nonNull(vc, "vc is null");
 
         final GenotypesContext genotypes = vc.getGenotypes();
@@ -82,7 +83,7 @@ public abstract class AS_RankSumTest extends RankSumTest implements ReducibleAnn
     @Override
     public Map<String, Object> annotateRawData(final ReferenceContext ref,
                                                final VariantContext vc,
-                                               final ReadLikelihoods<Allele> likelihoods ) {
+                                               final AlleleLikelihoods<GATKRead, Allele> likelihoods ) {
         if ( likelihoods == null || !likelihoods.hasFilledLikelihoods()) {
             return Collections.emptyMap();
         }
@@ -150,7 +151,7 @@ public abstract class AS_RankSumTest extends RankSumTest implements ReducibleAnn
 
     // Generates as CompressedDataList over integer values over each read
     @SuppressWarnings({"unchecked", "rawtypes"})//FIXME generics here blow up
-    private void calculateRawData(VariantContext vc, final ReadLikelihoods<Allele> likelihoods, ReducibleAnnotationData myData) {
+    private void calculateRawData(VariantContext vc, final AlleleLikelihoods<GATKRead, Allele> likelihoods, ReducibleAnnotationData myData) {
         if( vc.getGenotypes().getSampleNames().size() != 1) {
             throw new IllegalStateException("Calculating raw data for allele-specific rank sums requires variant context input with exactly one sample, as in a gVCF.");
         }
@@ -161,7 +162,7 @@ public abstract class AS_RankSumTest extends RankSumTest implements ReducibleAnn
         final int refLoc = vc.getStart();
 
         final Map<Allele, CompressedDataList<Integer>> perAlleleValues = myData.getAttributeMap();
-        for ( final ReadLikelihoods<Allele>.BestAllele bestAllele : likelihoods.bestAllelesBreakingTies() ) {
+        for ( final AlleleLikelihoods<GATKRead, Allele>.BestAllele bestAllele : likelihoods.bestAllelesBreakingTies() ) {
             if (bestAllele.isInformative() && isUsableRead(bestAllele.evidence, refLoc)) {
                 final OptionalDouble value = getElementForRead(bestAllele.evidence, refLoc, bestAllele);
                 if (value.isPresent() && value.getAsDouble() != INVALID_ELEMENT_FROM_READ && perAlleleValues.containsKey(bestAllele.allele)) {

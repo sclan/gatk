@@ -12,8 +12,9 @@ import org.broadinstitute.hellbender.engine.ReferenceContext;
 import org.broadinstitute.hellbender.utils.GenotypeCounts;
 import org.broadinstitute.hellbender.utils.GenotypeUtils;
 import org.broadinstitute.hellbender.utils.Utils;
-import org.broadinstitute.hellbender.utils.genotyper.ReadLikelihoods;
+import org.broadinstitute.hellbender.utils.genotyper.AlleleLikelihoods;
 import org.broadinstitute.hellbender.utils.help.HelpConstants;
+import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.variant.GATKVCFConstants;
 
 import java.io.File;
@@ -68,7 +69,7 @@ public final class InbreedingCoeff extends PedigreeAnnotation implements Standar
     @Override
     public Map<String, Object> annotate(final ReferenceContext ref,
                                         final VariantContext vc,
-                                        final ReadLikelihoods<Allele> likelihoods) {
+                                        final AlleleLikelihoods<GATKRead, Allele> likelihoods) {
         Utils.nonNull(vc);
         final GenotypesContext genotypes = getFounderGenotypes(vc);
         if (genotypes == null || genotypes.size() < MIN_SAMPLES || !vc.isVariant()) {

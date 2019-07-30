@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import htsjdk.samtools.util.Locatable;
 import htsjdk.variant.variantcontext.Allele;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.apache.commons.collections.ListUtils;
@@ -12,10 +13,13 @@ import org.broadinstitute.hellbender.utils.IndexRange;
 import org.broadinstitute.hellbender.utils.MathUtils;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.Utils;
+import org.broadinstitute.hellbender.utils.downsampling.AlleleBiasedDownsamplingUtils;
 import org.broadinstitute.hellbender.utils.pileup.PileupElement;
+import org.broadinstitute.hellbender.utils.read.GATKRead;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -297,6 +301,44 @@ public class AlleleLikelihoods<EVIDENCE extends Locatable, A extends Allele> imp
         }
     }
 
+    public void switchToNaturalLog() {
+        final double conversionFactor = Math.log(10);
+        final int sampleCount = samples.numberOfSamples();
+        final int alleleCount = alleles.numberOfAlleles();
+
+        for (int s = 0; s < sampleCount; s++) {
+            for (int a = 0; a < alleleCount; a++) {
+                MathUtils.applyToArrayInPlace(valuesBySampleIndex[s][a], x -> x * conversionFactor);
+            }
+        }
+        isNaturalLog = true;
+    }
+
+    /**
+     * Downsamples reads based on contamination fractions making sure that all alleles are affected proportionally.
+     *
+     * @param perSampleDownsamplingFraction contamination sample map where the sample name are the keys and the
+     *                                       fractions are the values.
+     *
+     * @throws IllegalArgumentException if {@code perSampleDownsamplingFraction} is {@code null}.
+     */
+    public void contaminationDownsampling(final Map<String, Double> perSampleDownsamplingFraction) {
+        Utils.nonNull(perSampleDownsamplingFraction);
+
+        final int alleleCount = alleles.numberOfAlleles();
+        for (int s = 0; s < samples.numberOfSamples(); s++) {
+            final double fraction = perSampleDownsamplingFraction.getOrDefault(samples.getSample(s), 0.0);
+            if (Double.isNaN(fraction) || fraction <= 0.0) {
+                continue;
+            }
+
+            final Map<A, List<EVIDENCE>> alleleEvidenceMap = evidenceByBestAlleleMap(s);
+            final Collection<EVIDENCE> evidenceToRemove = fraction >= 1 ? evidenceBySampleIndex.get(s) :
+                    AlleleBiasedDownsamplingUtils.selectAlleleBiasedEvidence(alleleEvidenceMap, fraction);
+            removeSampleEvidence(s, evidenceToRemove, alleleCount);
+        }
+    }
+
     /**
      * Adjusts likelihoods so that for each unit of evidence, the best allele likelihood is 0 and caps the minimum likelihood
      * of any allele for each unit of evidence based on the maximum alternative allele likelihood.
@@ -534,6 +576,53 @@ public class AlleleLikelihoods<EVIDENCE extends Locatable, A extends Allele> imp
             valuesBySampleIndex[s] = newValuesBySampleIndex;
         }
         return true;
+    }
+
+    /**
+     * Group evidence into lists of evidence -- for example group by read name to force read pairs to support a single haplotype
+     * @return
+     */
+    public <U> AlleleLikelihoods<GroupedEvidence<EVIDENCE>, A> groupEvidence(final Function<EVIDENCE, U> groupingFunction) {
+        final int sampleCount = samples.numberOfSamples();
+        final double[][][] newLikelihoodValues = new double[sampleCount][][];
+        final int alleleCount = alleles.numberOfAlleles();
+
+        final Object2IntMap<GroupedEvidence<EVIDENCE>>[] fragmentIndexBySampleIndex = new Object2IntMap[sampleCount];
+        final List<List<GroupedEvidence<EVIDENCE>>> fragmentsBySampleIndex = new ArrayList<>(sampleCount);
+
+        for (int s = 0; s < sampleCount; s++) {
+            final List<GroupedEvidence<EVIDENCE>> evidenceGroups = sampleEvidence(s).stream().collect(Collectors.groupingBy(groupingFunction))
+                    .values().stream().map(GroupedEvidence<EVIDENCE>::new).collect(Collectors.toList());
+
+
+            final int sampleGroupedEvidenceCount = evidenceGroups.size();
+
+            final double[][] oldSampleValues = valuesBySampleIndex[s];
+            final double[][] newSampleValues = newLikelihoodValues[s] = new double[alleleCount][sampleGroupedEvidenceCount];
+
+            // For each old allele and read we update the new table keeping the maximum likelihood.
+            fragmentIndexBySampleIndex[s] = new Object2IntArrayMap<>(sampleGroupedEvidenceCount);
+            for (int f = 0; f < sampleGroupedEvidenceCount; f++) {
+                fragmentIndexBySampleIndex[s].put(evidenceGroups.get(f), f);
+                for (int a = 0; a < alleleCount; a++) {
+                    for (final EVIDENCE evidence : evidenceGroups.get(f)) {
+                        final int oldReadIndex = evidenceIndex(s, evidence);
+                        newSampleValues[a][f] += oldSampleValues[a][oldReadIndex];
+                    }
+                }
+            }
+            fragmentsBySampleIndex.add(evidenceGroups);
+        }
+
+        // Finally we create the new read-likelihood
+        final AlleleLikelihoods<GroupedEvidence<EVIDENCE>, A> result = new AlleleLikelihoods<GroupedEvidence<EVIDENCE>, A>(
+                alleles,
+                samples,
+                fragmentsBySampleIndex,
+                fragmentIndexBySampleIndex, newLikelihoodValues);
+
+        result.isNaturalLog = this.isNaturalLog;
+        return result;
     }
 
     /**
@@ -944,7 +1033,6 @@ public class AlleleLikelihoods<EVIDENCE extends Locatable, A extends Allele> imp
         return bestAllelesBreakingTies(sampleIndex, a -> a.isReference() ? 1.0 : 0);
     }
 
-
     /**
      * Returns evidence stratified by best allele.
      * @param sampleIndex the target sample.
@@ -1011,8 +1099,6 @@ public class AlleleLikelihoods<EVIDENCE extends Locatable, A extends Allele> imp
 
     /**
      * Returns the total count of evidence in the evidence-likelihood collection.
-     *
-     * @return never {@code null}
      */
     public int evidenceCount() {
         return evidenceBySampleIndex.stream().mapToInt(List::size).sum();
@@ -1053,6 +1139,18 @@ public class AlleleLikelihoods<EVIDENCE extends Locatable, A extends Allele> imp
                     .collect(Collectors.toList());
             removeSampleEvidence(s, evidenceToRemove, alleleCount);
         }
+    }
+
+    protected double maximumLikelihoodOverAllAlleles(final int sampleIndex, final int evidenceIndex) {
+        double result = Double.NEGATIVE_INFINITY;
+        final int alleleCount = alleles.numberOfAlleles();
+        final double[][] sampleValues = valuesBySampleIndex[sampleIndex];
+        for (int a = 0; a < alleleCount; a++) {
+            if (sampleValues[a][evidenceIndex] > result) {
+                result = sampleValues[a][evidenceIndex];
+            }
+        }
+        return result;
     }
 
     /**
@@ -1134,6 +1232,32 @@ public class AlleleLikelihoods<EVIDENCE extends Locatable, A extends Allele> imp
         valuesBySampleIndex[sampleIndex] = newSampleValues;
         evidenceBySampleIndex.set(sampleIndex, newSampleEvidence);
         evidenceListBySampleIndex[sampleIndex] = null; // reset the unmodifiable list.
+    }
+
+    /**
+     * Removes those read that the best possible likelihood given any allele is just too low.
+     *
+     * <p>
+     *     This is determined by a maximum error per read-base against the best likelihood possible.
+     * </p>
+     *
+     * @param log10MinTrueLikelihood Function that returns the minimum likelihood that the best allele for a unit of evidence must have
+     * @throws IllegalStateException is not supported for read-likelihood that do not contain alleles.
+     *
+     * @throws IllegalArgumentException if {@code maximumErrorPerBase} is negative.
+     */
+    public void filterPoorlyModeledEvidence(final ToDoubleFunction<EVIDENCE> log10MinTrueLikelihood) {
+        Utils.validateArg(alleles.numberOfAlleles() > 0, "unsupported for read-likelihood collections with no alleles");
+
+        new IndexRange(0, samples.numberOfSamples()).forEach(s -> {
+            final List<EVIDENCE> sampleEvidence = evidenceBySampleIndex.get(s);
+            final List<EVIDENCE> evidenceToRemove = IntStream.range(0, sampleEvidence.size())
+                    .filter(e -> maximumLikelihoodOverAllAlleles(s, e) < log10MinTrueLikelihood.applyAsDouble(sampleEvidence.get(e)))
+                    .mapToObj(sampleEvidence::get)
+                    .collect(Collectors.toList());
+
+            removeSampleEvidence(s, evidenceToRemove, alleles.numberOfAlleles());
+        });
     }
 
 

@@ -127,7 +127,7 @@ public class Mutect2IntegrationTest extends CommandLineProgramTest {
         final List<String> args = Arrays.asList(
                 "-I", tumorBam.getAbsolutePath(),
                 "-R", b37_reference_20_21,
-                "-L", "20",
+                "-L", "20", "--genotype-germline-sites",
                 "--" + M2ArgumentCollection.GERMLINE_RESOURCE_LONG_NAME, GNOMAD.getAbsolutePath(),
                 "-XL", mask.getAbsolutePath(),
                 "-O", unfilteredVcf.getAbsolutePath(),

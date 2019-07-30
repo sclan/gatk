@@ -15,7 +15,7 @@ import org.broadinstitute.hellbender.tools.walkers.annotator.allelespecific.Redu
 import org.broadinstitute.hellbender.tools.walkers.annotator.allelespecific.ReducibleAnnotationData;
 import org.broadinstitute.hellbender.utils.QualityUtils;
 import org.broadinstitute.hellbender.utils.Utils;
-import org.broadinstitute.hellbender.utils.genotyper.ReadLikelihoods;
+import org.broadinstitute.hellbender.utils.genotyper.AlleleLikelihoods;
 import org.broadinstitute.hellbender.utils.help.HelpConstants;
 import org.broadinstitute.hellbender.utils.logging.OneShotLogger;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
@@ -78,7 +78,7 @@ public final class RMSMappingQuality extends InfoFieldAnnotation implements Stan
     @Override
     public Map<String, Object> annotateRawData(final ReferenceContext ref,
                                                final VariantContext vc,
-                                               final ReadLikelihoods<Allele> likelihoods){
+                                               final AlleleLikelihoods<GATKRead, Allele> likelihoods){
         Utils.nonNull(vc);
         if (likelihoods == null || likelihoods.evidenceCount() == 0) {
             return Collections.emptyMap();
@@ -176,7 +176,7 @@ public final class RMSMappingQuality extends InfoFieldAnnotation implements Stan
 
     @SuppressWarnings({"unchecked", "rawtypes"})//FIXME
     private void calculateRawData(final VariantContext vc,
-                                 final ReadLikelihoods<Allele> likelihoods,
+                                 final AlleleLikelihoods<GATKRead, Allele> likelihoods,
                                  final ReducibleAnnotationData rawAnnotations){
         //GATK3.5 had a double, but change this to an long for the tuple representation (square sum, read count)
         long squareSum = 0;
@@ -196,7 +196,7 @@ public final class RMSMappingQuality extends InfoFieldAnnotation implements Stan
     @Override
     public Map<String, Object> annotate(final ReferenceContext ref,
                                         final VariantContext vc,
-                                        final ReadLikelihoods<Allele> likelihoods) {
+                                        final AlleleLikelihoods<GATKRead, Allele> likelihoods) {
         Utils.nonNull(vc);
         if (likelihoods == null || likelihoods.evidenceCount() < 1 ) {
             return new HashMap<>();
@@ -261,12 +261,12 @@ public final class RMSMappingQuality extends InfoFieldAnnotation implements Stan
      * @return the number of reads at the given site, trying first {@Link GATKVCFConstants.RAW_MAPPING_QUALITY_WITH_DEPTH_KEY},
      * falling back to calculating the value as InfoField {@link VCFConstants#DEPTH_KEY} minus the
      * format field {@link GATKVCFConstants#MIN_DP_FORMAT_KEY} or DP of each of the HomRef genotypes at that site.
-     * If neither of those is possible, will fall back to calculating the reads from the ReadLikelihoods data if provided.
+     * If neither of those is possible, will fall back to calculating the reads from the likelihoods data if provided.
      * @throws UserException.BadInput if the {@link VCFConstants#DEPTH_KEY} is missing or if the calculated depth is <= 0
      */
     @VisibleForTesting
     static long getNumOfReads(final VariantContext vc,
-                             final ReadLikelihoods<Allele> likelihoods) {
+                             final AlleleLikelihoods<GATKRead, Allele> likelihoods) {
         if(vc.hasAttribute(GATKVCFConstants.RAW_MAPPING_QUALITY_WITH_DEPTH_KEY)) {
             List<Long> MQtuple = getAttributeAsLongList(vc, GATKVCFConstants.RAW_MAPPING_QUALITY_WITH_DEPTH_KEY,0L);
             if (MQtuple.get(TOTAL_DEPTH_INDEX) > 0) {
