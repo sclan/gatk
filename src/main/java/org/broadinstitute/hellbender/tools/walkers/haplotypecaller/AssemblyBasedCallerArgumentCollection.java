@@ -130,7 +130,7 @@ public abstract class AssemblyBasedCallerArgumentCollection {
             doc = "Likelihood and read-based annotations will only take in consideration reads " +
                     "that overlap the variant or any base on further than this distance expressed in base pairs",
             optional = true)
-    public int informativeReadOverlapRadius = 0;
+    public int informativeReadOverlapRadius = 2;
 
     @Advanced
     @Argument(fullName= USE_FILTERED_READS_FOR_ANNOTATIONS_LONG_NAME, doc = "Use the contamination-filtered read maps for the purposes of annotating variants", optional=true)
