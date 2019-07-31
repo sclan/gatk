@@ -87,6 +87,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-L", "20:10000000-10100000",
                 "-O", outputPath,
                 "-pairHMM", "AVX_LOGLESS_CACHING",
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false"
         };
 
@@ -157,6 +158,8 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-L", "20:10000000-10100000",
                 "-O", output.getAbsolutePath(),
                 "-pairHMM", "AVX_LOGLESS_CACHING",
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
+
         };
 
         runCommandLine(args);
@@ -221,6 +224,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-O", outputPath,
                 "-ERC", "GVCF",
                 "-pairHMM", "AVX_LOGLESS_CACHING",
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false"
         };
 
@@ -256,6 +260,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-G", "AS_StandardAnnotation",
                 "-ERC", "GVCF",
                 "-pairHMM", "AVX_LOGLESS_CACHING",
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false"
         };
 
@@ -290,6 +295,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-L", "20:10000000-10100000",
                 "-O", output.getAbsolutePath(),
                 "-ERC", "GVCF",
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "-pairHMM", "AVX_LOGLESS_CACHING",
         };
 
@@ -322,6 +328,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-G", "StandardHCAnnotation",
                 "-G", "AS_StandardAnnotation",
                 "-ERC", "GVCF",
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "-pairHMM", "AVX_LOGLESS_CACHING",
         };
 
@@ -350,6 +357,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                     largeFileTestDir + "1000G.phase3.broad.withGenotypes.chr20.10100000.vcf",
                 "--" + GenotypeCalculationArgumentCollection.NUM_REF_SAMPLES_LONG_NAME, "2500",
                 "-pairHMM", "AVX_LOGLESS_CACHING",
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false"
         };
 
@@ -387,6 +395,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-O", outputPath,
                 "-pairHMM", "AVX_LOGLESS_CACHING",
                 "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false",
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "--genotyping-mode", "GENOTYPE_GIVEN_ALLELES",
                 "--alleles", new File(TEST_FILES_DIR, "testGenotypeGivenAllelesMode_givenAlleles.vcf").getAbsolutePath()
         };
@@ -413,6 +422,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-pairHMM", "AVX_LOGLESS_CACHING",
                 "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false",
                 "--genotyping-mode", "GENOTYPE_GIVEN_ALLELES",
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "--alleles", new File(TEST_FILES_DIR, "testGenotypeGivenAllelesMode_givenAlleles.vcf").getAbsolutePath(),
                 "-ERC", "GVCF"
         };
@@ -456,6 +466,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
         argBuilder.addArgument("L", testInterval);
         argBuilder.addArgument(AssemblyBasedCallerArgumentCollection.BAM_OUTPUT_SHORT_NAME, bamOutput.toUri().toString());
         argBuilder.addArgument("pairHMM", "AVX_LOGLESS_CACHING");
+        argBuilder.addArgument(AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME,2);
 
         runCommandLine(argBuilder.getArgsArray());
 
@@ -482,7 +493,8 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-O", out.getAbsolutePath(),
                 "-pairHMM", "AVX_LOGLESS_CACHING",
                 "--" + StandardArgumentDefinitions.SITES_ONLY_LONG_NAME,
-                "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false"
+                "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false",
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2"
         };
 
         runCommandLine(args);
@@ -509,6 +521,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-L", "20:1-5000",
                 "-O", out.getAbsolutePath(),
                 "-pairHMM", "AVX_LOGLESS_CACHING",
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "--" + AssemblyRegionWalker.FORCE_ACTIVE_REGIONS_LONG_NAME, "true",
                 "--" + HaplotypeCaller.ASSEMBLY_REGION_OUT_LONG_NAME, assemblyRegionOut.getAbsolutePath(),
                 "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false"
@@ -595,6 +608,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-O", outputPath,
                 "-ploidy", "4",
                 "--max-genotype-count", "15",
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false"
         };
         runCommandLine(args);
@@ -898,6 +912,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-R", reference,
                 "-L", interval.toString(),
                 "-O", uncorrectedOutput.getAbsolutePath(),
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "-ERC", (gvcfMode ? "GVCF" : "NONE"),
         };
         Utils.resetRandomGenerator();
@@ -910,6 +925,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-L", interval.toString(),
                 "-O", correctedOutput.getAbsolutePath(),
                 "-contamination", Double.toString(contaminationFraction),
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "-ERC", (gvcfMode ? "GVCF" : "NONE"),
         };
         Utils.resetRandomGenerator();
@@ -922,6 +938,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-L", interval.toString(),
                 "-O", correctedOutputUsingContaminationFile.getAbsolutePath(),
                 "-contamination-file", contaminationFile,
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "-ERC", (gvcfMode ? "GVCF" : "NONE"),
         };
         Utils.resetRandomGenerator();
@@ -1000,6 +1017,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-L", "20:10000000-10010000",
                 "-O", output.getAbsolutePath(),
                 "-contamination", "1.0",
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "-ERC", "GVCF"
         };
         runCommandLine(contaminationArgs);
@@ -1027,6 +1045,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-R", b37Reference,
                 "-L", "1:169510380",
                 "--" + IntervalArgumentCollection.INTERVAL_PADDING_LONG_NAME, "100",
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "-O", output.getAbsolutePath()
         };
         runCommandLine(args);
@@ -1065,6 +1084,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-R", reference,
                 "-L", intervalString,
                 "-O", outputNoMaxAlternateAlleles.getAbsolutePath(),
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "-ERC", (gvcfMode ? "GVCF" : "NONE")
         };
         runCommandLine(argsNoMaxAlternateAlleles);
@@ -1075,6 +1095,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-L", intervalString,
                 "-O", outputWithMaxAlternateAlleles.getAbsolutePath(),
                 "--max-alternate-alleles", Integer.toString(maxAlternateAlleles),
+                "--" + AssemblyBasedCallerArgumentCollection.ALLELE_EXTENSION_LONG_NAME, "2",
                 "-ERC", (gvcfMode ? "GVCF" : "NONE")
         };
         runCommandLine(argsWithMaxAlternateAlleles);
