@@ -108,64 +108,85 @@ public final class SmithWatermanJavaAligner implements SmithWatermanAligner {
         Utils.Alignment bestAlignment = null;
 
         if (overhangStrategy == SWOverhangStrategy.SOFTCLIP || overhangStrategy == SWOverhangStrategy.IGNORE){
-
-            int numOfSoftclips = 5;
-
-            //exact match
-            long startTime1 = System.nanoTime();
-            Utils.Alignment exactMatch = Utils.lastIndexOfAtMostTwoMismatches(reference, alternate, 0, 0, true, numOfSoftclips, 0);
-            exactMatchTime += System.nanoTime() - startTime1;
-            if (exactMatch.getIndex() != -1) {
-                noSW++;
-                bestAlignment = exactMatch;
-                numOfSoftclips = exactMatch.getNumOfSoftclips();
-                alignmentResult = calculateSoftclipCigar(exactMatch.getTypeOfSoftclip(), reference, alternate, numOfSoftclips);
-                totalComputeTime += System.nanoTime() - startTime;
-                if(numOfSoftclips <= 2){
-                    //******************
-                    testOutput(alignmentResult, reference, alternate, overhangStrategy, parameters);
-                    //*****************
-                    return alignmentResult;
-                }
-            }
-
-            //one mismatch
-            long startTime2 = System.nanoTime();
-            Utils.Alignment singleMismatch = Utils.lastIndexOfAtMostTwoMismatches(reference, alternate, 1, 0, true, numOfSoftclips % 3, 0);
-            mismatchTime += System.nanoTime() - startTime2;
-            if (singleMismatch.getIndex() != -1){
-                noSW++;
-                bestAlignment = singleMismatch;
-                alignmentResult = calculateSoftclipCigar(singleMismatch.getTypeOfSoftclip(), reference, alternate, singleMismatch.getNumOfSoftclips());
-                totalComputeTime += System.nanoTime() - startTime;
-                numOfSoftclips = singleMismatch.getNumOfSoftclips();
-                if(numOfSoftclips == 0){
-                    //******************
-                    testOutput(alignmentResult, reference, alternate, overhangStrategy, parameters);
-                    //*****************
-                    return alignmentResult;
-                }
-            }
-
-            //one indel
+            //HapToRef
             if(this.haplotypeToref){
-                //int maxIndelLength = calculateAllowedLengthOfIndelHapToRef(parameters);
-                long startTime3 = System.nanoTime();
-                ImmutablePair<Integer,Integer> indelStartAndSize = Utils.oneIndelHapToRef(reference, alternate, 2);
-                indelTimeHapToRef += System.nanoTime() - startTime3;
-                int oneIndelIndex = indelStartAndSize.getLeft();
-                if (oneIndelIndex != -1){
-                    indelCount++;
-                    int indelLength = indelStartAndSize.getRight();
-                    alignmentResult = calculateOneIndelCigar(indelLength, reference, alternate, oneIndelIndex);
-                    totalComputeTime += System.nanoTime() - startTime;
-                    //******************
-                    testOutput(alignmentResult, reference, alternate, overhangStrategy, parameters);
-                    //*****************
-                    return alignmentResult;
+                //0-2 SNPS
+                if(reference.length == alternate.length){
+                    for(int allowedMismatches = 0; allowedMismatches < 3; allowedMismatches++){
+                        long startTime1 = System.nanoTime();
+                        Utils.Alignment exactMatch = Utils.lastIndexOfAtMostTwoMismatches(reference, alternate, allowedMismatches);
+                        exactMatchTime += System.nanoTime() - startTime1;
+                        if (exactMatch.getIndex() != -1) {
+                            noSW++;
+                            final List<CigarElement> lce = Arrays.asList(makeElement(State.MATCH, reference.length));
+                            alignmentResult = new SWPairwiseAlignmentResult(AlignmentUtils.consolidateCigar(new Cigar(lce)), exactMatch.getIndex());
+                            totalComputeTime += System.nanoTime() - startTime;
+                            //******************
+                            testOutput(alignmentResult, reference, alternate, overhangStrategy, parameters);
+                            //*****************
+                            return alignmentResult;
+                        }
+                    }
+                }
+                else{
+                    //int maxIndelLength = calculateAllowedLengthOfIndelHapToRef(parameters);
+                    long startTime3 = System.nanoTime();
+                    ImmutablePair<Integer,Integer> indelStartAndSize = Utils.oneIndelHapToRef(reference, alternate, 2);
+                    indelTimeHapToRef += System.nanoTime() - startTime3;
+                    int oneIndelIndex = indelStartAndSize.getLeft();
+                    if (oneIndelIndex != -1){
+                        indelCount++;
+                        int indelLength = indelStartAndSize.getRight();
+                        alignmentResult = calculateOneIndelCigar(indelLength, reference, alternate, oneIndelIndex);
+                        totalComputeTime += System.nanoTime() - startTime;
+                        //******************
+                        testOutput(alignmentResult, reference, alternate, overhangStrategy, parameters);
+                        //*****************
+                        return alignmentResult;
+                    }
                 }
             }
+            //readToBestHap
             else{
+                int numOfSoftclips = 5;
+
+                //exact match
+                long startTime1 = System.nanoTime();
+                Utils.Alignment exactMatch = Utils.lastIndexOfAtMostTwoMismatches(reference, alternate, 0, 0, true, numOfSoftclips, 0);
+                exactMatchTime += System.nanoTime() - startTime1;
+                if (exactMatch.getIndex() != -1) {
+                    noSW++;
+                    bestAlignment = exactMatch;
+                    numOfSoftclips = exactMatch.getNumOfSoftclips();
+                    alignmentResult = calculateSoftclipCigar(exactMatch.getTypeOfSoftclip(), reference, alternate, numOfSoftclips);
+                    totalComputeTime += System.nanoTime() - startTime;
+                    if(numOfSoftclips <= 2){
+                        //******************
+                        testOutput(alignmentResult, reference, alternate, overhangStrategy, parameters);
+                        //*****************
+                        return alignmentResult;
+                    }
+                }
+
+                //one mismatch
+                long startTime2 = System.nanoTime();
+                Utils.Alignment singleMismatch = Utils.lastIndexOfAtMostTwoMismatches(reference, alternate, 1, 0, true, numOfSoftclips % 3, 0);
+                mismatchTime += System.nanoTime() - startTime2;
+                if (singleMismatch.getIndex() != -1){
+                    noSW++;
+                    bestAlignment = singleMismatch;
+                    alignmentResult = calculateSoftclipCigar(singleMismatch.getTypeOfSoftclip(), reference, alternate, singleMismatch.getNumOfSoftclips());
+                    totalComputeTime += System.nanoTime() - startTime;
+                    numOfSoftclips = singleMismatch.getNumOfSoftclips();
+                    if(numOfSoftclips == 0){
+                        //******************
+                        testOutput(alignmentResult, reference, alternate, overhangStrategy, parameters);
+                        //*****************
+                        return alignmentResult;
+                    }
+                }
+
+
                 int maxInsertionSize = calculateMaxInsertionSizeReadToHap(parameters);
                 int maxDeletionSize = calculateMaxDeletionSizeReadToHap(parameters);
                 int maxSoftclipSize = 2;
