@@ -1430,8 +1430,8 @@ public final class Utils {
                         int alignmentOffset = matchIndex;
                         int matchingBases = queryIndexBack + 1;
                         int indelSize = refIndexBack - matchIndex + 1 - matchingBases;
-                        //only set new indel if indelsize is smaller, or if they're equal but new indel has less M's on the left
-                        if((indelSize < deletion.getIndelSize() || (indelSize == deletion.getIndelSize() && matchingBases <= deletion.getMatchingBases())) && indelSize > 0){
+                        //only set new indel if indelsize is smaller, or if they're equal but new indel has same number of refBasesConsumed and less M's on the left
+                        if((indelSize < deletion.getIndelSize() || (indelSize == deletion.getIndelSize() && alignmentOffset == deletion.getAlignmentOffset() && matchingBases <= deletion.getMatchingBases())) && indelSize > 0){
                             deletion.setAlignmentOffset(alignmentOffset);
                             deletion.setMatchingBases(matchingBases);
                             deletion.setIndelSize(indelSize);
@@ -1490,7 +1490,7 @@ public final class Utils {
                                 int alignmentOffset = refIndexFront + 1;
                                 int matchingBases = refIndexBack - alignmentOffset + 1;
                                 int indelSize = queryIndexBack - matchingBases + 1;
-                                if((indelSize < insertion.getIndelSize() || (indelSize == insertion.getIndelSize() && matchingBases <= insertion.getMatchingBases())) && indelSize > 0){
+                                if((indelSize < insertion.getIndelSize() || (indelSize == insertion.getIndelSize() && alignmentOffset == insertion.getAlignmentOffset() && matchingBases <= insertion.getMatchingBases())) && indelSize > 0){
                                     insertion.setAlignmentOffset(alignmentOffset);
                                     insertion.setMatchingBases(matchingBases);
                                     insertion.setIndelSize(indelSize);

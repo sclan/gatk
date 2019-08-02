@@ -875,7 +875,7 @@ public final class UtilsUnitTest extends GATKBaseTest {
     }
 
     @Test
-    public void testIndel6(){
+    public void testIndel6SameScoreSameRefBasesLessLeftMs(){
         SWParameters parameters = new SWParameters(10, -15, -30, -5);
         final String reference ="TTTTTTTTTTTTTTTTTTTTTATGTTTTTGAGACAGGTCTC";
         final String query =    "TTTTTTTTTTTTTTTTTTTTTTTTT";
@@ -883,6 +883,17 @@ public final class UtilsUnitTest extends GATKBaseTest {
         int expected = 1;
         Assert.assertEquals(result, expected);
     }
+
+    @Test
+    public void testIndel7SameScoreLessRefBases(){
+        SWParameters parameters = new SWParameters(10, -15, -30, -5);
+        final String reference ="AGAGAGAGAAACAGAGAGAGAGAGAGAGAAACAGAGAGAGA";
+        final String query =    "GAGAGAGAGAGAGAGAGAGA";
+        int result = Utils.oneIndelReadToHap(reference.getBytes(), query.getBytes(), parameters, 3,5, 5).getIndex();
+        int expected = 17;
+        Assert.assertEquals(result, expected);
+    }
+
 
     @Test
     public void softClipEnd(){
